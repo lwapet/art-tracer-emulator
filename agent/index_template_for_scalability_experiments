@@ -1,0 +1,55 @@
+/**
+ * This template is the one the experiment script tracer.py, when used to test odile
+ * takes as input to generate the index.ts file.
+ * The  file generated (index.ts) will be used to compile the tracer and the result 
+ * will be integrated in the application for tests
+ ***** ->class_name_regex should be like 
+ *   new RegExp (['com\.zoner\.android\.antivirus\.svc\.NetMonitor',
+                        '|com\.zoner\.android\.antivirus\.svc\.ServiceBinder',
+                        '|com\.zoner\.android\.antivirus\.ui\.ActScanResults',
+                                ...
+                        '|com\.zoner\.android\.antivirus\.ui\.ActScanResults'
+                    ].join(''))
+ ***** ->method_name_regex should be like
+  new RegExp (['checkWifiSecurity',
+                        '|onServiceConnected',
+                        '|onBound',
+                                   ...
+                        '|resumeScan'
+                    ].join(''))
+
+ */
+import { trace_x86 } from "./tracer_x86";
+import { log } from "./logger";
+
+function wait(ms: number)
+{
+    var d = new Date().getTime();
+    var d2 = null;
+    do { d2 = new Date().getTime(); }
+    while(d2 - d < ms);
+}
+wait(10000);
+
+setTimeout(() => {
+    if(Process.arch == "ia32") {
+        log(" !!! We are on  processor " + Process.arch);
+        try {
+            trace_x86({
+                onEnter(methodName) {
+                    console.log("onEnter", methodName);
+                },
+                onLeave(methodName) {
+                }
+            },
+            {{ class_name_regex }},
+            {{ method_name_regex }},
+            );
+        } catch (error) {
+            log("Odile_Error --------> " + error.stack);
+        }    
+    } else {
+        log(" !!! We are on another processor " + Process.arch);
+    }  
+}, 1000);
+

@@ -1,0 +1,167 @@
+//README BEFORE CONTINUE
+// Before comparing Odile scalability with the frida one,
+// the content of this file was the most recent version of the file index.ts
+// So this file is the one you should use to continue developments 
+// in other terms, copy this file to erase the index.ts  file located in the same folder 
+// and continue development with it
+
+
+//import { trace } from "./tracer";
+import { trace_x86 } from "./tracer_x86";
+//import { trace_arm64 } from "./tracer_arm64";
+
+import { log } from "./logger";
+
+setTimeout(() => {
+    if(Process.arch == "ia32") {
+        log(" !!! We are on  processor " + Process.arch);
+        try {
+            trace_x86({
+                onEnter(methodName) {
+                    console.log("onEnter", methodName);
+                },
+                onLeave(methodName) {
+                }
+            //});  
+            //},/android.app.ContextImpl/,/getPackageName/); 
+            }/*,new RegExp (['android.app.ContextImpl',
+            '|com.aegislab.sd3prj.antivirus.free.util.ae',
+            '|com.aegislab.sd3prj.antivirus.free.service'].join('')),*/
+            
+            ,new RegExp (['com\.zoner\.android\.antivirus\.svc\.NetMonitor',
+                        '|com\.zoner\.android\.antivirus\.svc\.ServiceBinder',
+                        '|com\.zoner\.android\.antivirus\.ui\.ActScanResults',
+                        '|com\.zoner\.android\.antivirus\.svc\.ZapService',
+                        '|com\.zoner\.android\.antivirus\.scan\.ScanQueue',
+                        '|com\.zoner\.android\.antivirus\.svc\.ZapService\.MountReceiver',
+                        '|com\.zoner\.android\.antivirus\.svc\.ZapService\.NetworkStateReceiver',
+                        '|com\.zoner\.android\.antivirus\.svc\.ZapService\.InstallReceiver',
+                        '|com\.zoner\.android\.library\.common\.gcm\.CloudReceiver',
+                        '|com\.zoner\.android\.library\.common\.gcm\.CloudMessaging',
+                        '|com\.zoner\.android\.library\.common\.gcm\.CloudNotifier',
+                        '|com\.zoner\.android\.antivirus\.ui\.WidgetStatus',
+                        '|com\.zoner\.android\.antivirus\.scan\.CloudScanner',
+                        '|com\.zoner\.android\.antivirus\.ui\.ActScanResults'
+                     
+                    ].join('')),
+          
+            //new RegExp (['.*'].join(''))
+            new RegExp (['checkWifiSecurity',
+                        '|onServiceConnected',
+                        '|onBound',
+                        '|scanPackages',
+                        '|addDemand',
+                        '|onReceive',
+                        '|addPackage',
+                        '|checkWifiSecurity',
+                        '|consumeMessage',
+                        '|notifyNow',
+                        '|onStartCommand',
+                        '|demandResolved',
+                        '|onBound',
+                        '|notifyCloud',
+                        '|updateStatus',
+                        '|update',
+                        '|run',
+                        '|send',
+                        '|nextRequest',
+                        '|ignoreSelected',
+                        '|resultsResolved',
+                        '|removeSelected',
+                        '|resultsResolved',
+                        '|onScanFinish',
+                        '|showResults',
+                        '|stopScan',
+                        '|resumeScan'
+                    ].join('')),
+            
+            
+            );
+
+            //},/java.lang/,/.*/); 
+        } catch (error) {
+            log("Oups --------> " + error.stack);
+        }    
+    } else {
+        log(" !!! We are on another processor " + Process.arch);
+    }
+    
+}, 1000);
+
+
+/** 1 - Based on observations on section 1, I will trace some APIs call related to system monitoring (C)
+     --- com.zoner.android.antivirus.svc.NetMonitor: void checkWifiSecurity(android.content.Context,android.content.SharedPreferences,com.zoner.android.antivirus.svc.PermanentIcon)
+     --- com.zoner.android.antivirus.svc.ServiceBinder$1: void onServiceConnected(android.content.ComponentName,android.os.IBinder)
+     --- com.zoner.android.antivirus.ui.ActScanResults: void onBound(com.zoner.android.antivirus.svc.ZapService)
+     --- com.zoner.android.antivirus.svc.ZapService: void scanPackages(java.util.List)
+     --- com.zoner.android.antivirus.scan.ScanQueue: void addDemand(java.util.List)  
+     --- com.zoner.android.antivirus.svc.ZapService$NetworkStateReceiver: void onReceive(android.content.Context,android.content.Intent)
+     --- com.zoner.android.antivirus.svc.ZapService$InstallReceiver: void onReceive(android.content.Context,android.content.Intent) 
+     --- com.zoner.android.antivirus.scan.ScanQueue: void addPackage(java.lang.String) 
+     --- com.zoner.android.antivirus.svc.ZapService$MountReceiver: void onReceive(android.content.Context,android.content.Intent)
+     --- com.zoner.android.antivirus.svc.NetMonitor: void checkWifiSecurity(android.content.Context,android.content.SharedPreferences,com.zoner.android.antivirus.svc.PermanentIcon)> 
+     --- com.zoner.android.library.common.gcm.CloudReceiver: void onReceive(android.content.Context,android.content.Intent)
+     --- com.zoner.android.library.common.gcm.CloudMessaging: void consumeMessage(android.content.Intent)
+     --- com.zoner.android.library.common.gcm.CloudNotifier: void notifyNow(android.content.Context,int,java.lang.String,java.lang.String,android.content.Intent)
+    
+    2 - To be sure that the Antivirus do not realize other operation than the ones listed above, I trace 
+    the principal worker of the antivirus namely ZapService and the main methods.
+     --- com.zoner.android.antivirus.svc.ZapService: int onStartCommand(android.content.Intent,int,int)
+     --- com.zoner.android.antivirus.svc.ZapService: void onSharedPreferenceChanged(android.content.SharedPreferences,java.lang.String)
+     --- com.zoner.android.antivirus.svc.ZapService: void demandResolved()
+     --- com.zoner.android.antivirus.ui.ActScanResults: void onBound(com.zoner.android.antivirus.svc.ZapService)
+     --- com.zoner.android.antivirus.svc.ZapService: void updateStatus()
+     --- com.zoner.android.antivirus.svc.ZapService$NetworkStateReceiver: void onReceive(android.content.Context,android.content.Intent) 
+     --- com.zoner.android.antivirus.svc.PermanentIcon: void notifyCloud(com.zoner.android.antivirus.scan.ScanResult)
+     --- com.zoner.android.antivirus.svc.ZapService$InstallReceiver: void onReceive(android.content.Context,android.content.Intent)
+
+    3 - I plan to trace the method PermanentIcon.getState() and surrounding calls especially  
+      to see if the antivirus changes his internal state when other apps are functionning and why.  
+    --- com.zoner.android.antivirus.svc.ZapService: void updateStatus()
+    --- com.zoner.android.antivirus.ui.WidgetStatus: void update(com.zoner.android.antivirus.svc.ZapService)
+
+    4 - Communication with cloud will be also analyse by tracing methods around the class CloudScanner
+     --- com.zoner.android.antivirus.scan.CloudScanner: void run()
+     --- com.zoner.android.antivirus.scan.CloudScanner: void send(String paramString, ScanResult paramScanResult)
+     --- com.zoner.android.antivirus.scan.CloudScanner: CloudRequest nextRequest()
+ 
+    5 - Finally I trace ActScanResults to see if some results are computed and how? 
+
+     --- com.zoner.android.antivirus.ui.ActScanResults: void ignoreSelected()
+     --- com.zoner.android.antivirus.ui.ActScanResults: void resultsResolved()
+     --- com.zoner.android.antivirus.ui.ActScanResults: void removeSelected()
+     --- com.zoner.android.antivirus.ui.ActScanResults: void resultsResolved()
+     --- com.zoner.android.antivirus.ui.ActScanResults: void onBound(com.zoner.android.antivirus.svc.ZapService)
+     --- com.zoner.android.antivirus.ui.ActScanResults: void onScanFinish()
+     --- com.zoner.android.antivirus.ui.ActScanResults: void showResults()
+     --- com.zoner.android.antivirus.ui.ActScanResults: void stopScan()
+     --- com.zoner.android.antivirus.ui.ActScanResults: void resumeScan()
+ 
+  '|',
+                        '|',
+                        '|',
+                        '|',
+                        '|',
+                        '|',
+                        '|',
+                        '|',
+                        '|',
+                        '|',
+                        '|',
+                        '|',
+                        '|',
+                        '|',
+                        '|',
+                        '|',
+                        '|',
+                        '|',
+                        '|',
+                        '|',
+                        '|',
+                        '|',
+                        '|',
+                        '|',
+                        '|',
+                        '|',
+                        '|',
+     */
